@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
+from datetime import datetime
 from typing import List, Optional
 
 from database import get_db
@@ -17,19 +18,24 @@ router = APIRouter(prefix="/skills", tags=["skills"])
 
 # -------------------- Create a Skill with SubSkills --------------------
 @router.post("/", response_model=SkillResponse)
-def create_skill(
+async def create_skill(
     skill_data: SkillCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Create main skill
     skill = Skill(
         user_id=current_user.id,
-        skill_name=skill_data.skill_name
+        skill_name=skill_data.skill_name,
+        status="PENDING",
+        created_at=datetime.utcnow()
     )
     db.add(skill)
-    db.commit()
-    db.refresh(skill)
+    await db.commit()
+    await db.refresh(skill)
 
+    # Create sub-skills
+    sub_skills_list = []
     for sub_skill_data in skill_data.sub_skills:
         sub_skill = SubSkill(
             skill_id=skill.id,
@@ -37,13 +43,43 @@ def create_skill(
             employee_proficiency=sub_skill_data.employee_proficiency,
             experience_years=sub_skill_data.experience_years,
             has_certification=sub_skill_data.has_certification,
-            certification_file_url=sub_skill_data.certification_file_url
+            certification_file_url=sub_skill_data.certification_file_url,
+            created_at=datetime.utcnow()
         )
         db.add(sub_skill)
-    
-    db.commit()
-    db.refresh(skill)
-    return SkillResponse.model_validate(skill)
+        await db.commit()
+        await db.refresh(sub_skill)
+
+        sub_skills_list.append(
+            SubSkillResponse(
+                id=sub_skill.id,
+                skill_id=sub_skill.skill_id,
+                sub_skill_name=sub_skill.sub_skill_name,
+                employee_proficiency=sub_skill.employee_proficiency,
+                experience_years=sub_skill.experience_years,
+                has_certification=sub_skill.has_certification,
+                certification_file_url=sub_skill.certification_file_url,
+                created_at=sub_skill.created_at,
+                manager_proficiency=sub_skill.manager_proficiency,
+                status=sub_skill.status,
+                manager_comments=sub_skill.manager_comments,
+                last_updated_at=sub_skill.last_updated_at
+            )
+        )
+
+    # Prepare SkillResponse
+    skill_response = SkillResponse(
+        id=skill.id,
+        user_id=skill.user_id,
+        skill_name=skill.skill_name,
+        status=skill.status,
+        created_at=skill.created_at,
+        last_updated_at=skill.last_updated_at,
+        manager_comments=skill.manager_comments,
+        sub_skills=sub_skills_list
+    )
+
+    return skill_response
 
 # -------------------- Get My Skills --------------------
 @router.get("/my-skills")

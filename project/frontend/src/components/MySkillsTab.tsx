@@ -197,11 +197,10 @@
 
 
 import { useEffect, useState } from "react";
-import { Plus, Award, FileText, Star } from "lucide-react";
-import AddSkillCard from "./AddSkillCard";
+import { Award, FileText, Star } from "lucide-react";
 import { Skill } from "../types";
 
-// Define backend response shapes
+// Backend response types
 interface SubSkillResponseFromBackend {
   id: number;
   skill_id: number;
@@ -211,10 +210,6 @@ interface SubSkillResponseFromBackend {
   has_certification: boolean;
   certification_file_url?: string;
   created_at: string;
-  manager_proficiency?: number;
-  status: "pending" | "approved" | "rejected";
-  manager_comments?: string;
-  last_updated_at?: string;
 }
 
 interface SkillResponseFromBackend {
@@ -224,7 +219,6 @@ interface SkillResponseFromBackend {
   status: "pending" | "approved" | "rejected";
   manager_comments?: string;
   created_at: string;
-  last_updated_at?: string;
   sub_skills: SubSkillResponseFromBackend[];
 }
 
@@ -232,9 +226,7 @@ export default function MySkillsTab() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showAddSkill, setShowAddSkill] = useState(false);
 
-  // Use dynamic base URL from environment variables
   const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
   useEffect(() => {
@@ -249,7 +241,6 @@ export default function MySkillsTab() {
 
         const data: SkillResponseFromBackend[] = await res.json();
 
-        // Map backend response to frontend Skill
         const mappedSkills: Skill[] = data.map((skillResp) => ({
           id: skillResp.id,
           user_id: skillResp.user_id,
@@ -284,14 +275,13 @@ export default function MySkillsTab() {
   const handleAddSkill = (skillData: any) => {
     const newSkill: Skill = {
       id: Date.now(),
-      user_id: 0, // or pull from auth context
+      user_id: 0, // replace with actual user ID if available
       skill_name: skillData.skillName,
       sub_skills: skillData.subSkills,
       status: "pending",
       created_at: new Date().toISOString(),
     };
     setSkills([...skills, newSkill]);
-    setShowAddSkill(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -300,7 +290,6 @@ export default function MySkillsTab() {
       approved: "bg-green-100 text-green-800",
       rejected: "bg-red-100 text-red-800",
     };
-
     return (
       <span
         className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -312,43 +301,25 @@ export default function MySkillsTab() {
     );
   };
 
-  const renderStars = (proficiency: number) => {
-    return (
-      <div className="flex space-x-1">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`w-4 h-4 ${
-              i < proficiency ? "text-yellow-400 fill-current" : "text-gray-300"
-            }`}
-          />
-        ))}
-      </div>
-    );
-  };
+  const renderStars = (proficiency: number) => (
+    <div className="flex space-x-1">
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          className={`w-4 h-4 ${
+            i < proficiency ? "text-yellow-400 fill-current" : "text-gray-300"
+          }`}
+        />
+      ))}
+    </div>
+  );
 
   if (loading) return <p>Loading skills...</p>;
   if (error) return <p>{error}</p>;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">My Skills</h2>
-        <button
-          onClick={() => setShowAddSkill(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Add Skill
-        </button>
-      </div>
-
-      {showAddSkill && (
-        <AddSkillCard
-          onSubmit={handleAddSkill}
-          onCancel={() => setShowAddSkill(false)}
-        />
-      )}
+      <h2 className="text-2xl font-bold text-gray-900">My Skills</h2>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -361,86 +332,54 @@ export default function MySkillsTab() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Skill Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sub-skills
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Proficiency
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Experience
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Certifications
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skill Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sub-skills</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proficiency</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Certifications</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {skills.map((skill) => (
                 <tr key={skill.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <Award className="w-5 h-5 text-blue-600 mr-2" />
-                      <span className="font-medium text-gray-900">
-                        {skill.skill_name}
-                      </span>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap flex items-center">
+                    <Award className="w-5 h-5 text-blue-600 mr-2" />
+                    <span className="font-medium text-gray-900">{skill.skill_name}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="space-y-2">
-                      {skill.sub_skills.map((sub) => (
-                        <div key={sub.id} className="text-sm text-gray-700">
-                          {sub.sub_skill_name}
-                        </div>
-                      ))}
-                    </div>
+                    {skill.sub_skills.map((sub) => (
+                      <div key={sub.id} className="text-sm text-gray-700">{sub.sub_skill_name}</div>
+                    ))}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="space-y-2">
-                      {skill.sub_skills.map((sub) => (
-                        <div key={sub.id} className="flex items-center">
-                          {renderStars(sub.proficiency_level)}
-                          <span className="ml-2 text-sm text-gray-600">
-                            ({sub.proficiency_level}/5)
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    {skill.sub_skills.map((sub) => (
+                      <div key={sub.id} className="flex items-center space-x-2">
+                        {renderStars(sub.proficiency_level)}
+                        <span className="text-sm text-gray-600">({sub.proficiency_level}/5)</span>
+                      </div>
+                    ))}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="space-y-2">
-                      {skill.sub_skills.map((sub) => (
-                        <div key={sub.id} className="text-sm text-gray-700">
-                          {sub.experience_years} years
-                        </div>
-                      ))}
-                    </div>
+                    {skill.sub_skills.map((sub) => (
+                      <div key={sub.id} className="text-sm text-gray-700">{sub.experience_years} years</div>
+                    ))}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="space-y-2">
-                      {skill.sub_skills.map((sub) => (
-                        <div key={sub.id}>
-                          {sub.has_certification ? (
-                            <div className="flex items-center text-green-600">
-                              <FileText className="w-4 h-4 mr-1" />
-                              <span className="text-sm">Certified</span>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-500">N/A</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    {skill.sub_skills.map((sub) => (
+                      <div key={sub.id}>
+                        {sub.has_certification ? (
+                          <div className="flex items-center text-green-600">
+                            <FileText className="w-4 h-4 mr-1" />
+                            <span className="text-sm">Certified</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">N/A</span>
+                        )}
+                      </div>
+                    ))}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(skill.status)}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(skill.status)}</td>
                 </tr>
               ))}
             </tbody>

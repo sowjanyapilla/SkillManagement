@@ -3,6 +3,7 @@ import { User, LogOut } from 'lucide-react';
 import MySkillsTab from './MySkillsTab';
 import SkillMatchingTab from './SkillMatchingTab';
 import ApprovalsTab from './ApprovalsTab';
+import AddSkillCard from './AddSkillCard'; // import this
 import { User as UserType } from '../types';
 
 interface DashboardProps {
@@ -14,6 +15,9 @@ type TabType = 'my-skills' | 'skill-matching' | 'approvals';
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('my-skills');
+  const [showAddSkill, setShowAddSkill] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0); // to trigger refresh of MySkillsTab
 
   const tabs = [
     { id: 'my-skills', label: 'My Skills', component: MySkillsTab },
@@ -23,6 +27,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || MySkillsTab;
 
+  const handleSkillSubmit = (data: any) => {
+    setSuccessMessage('Skill has been submitted successfully!');
+    setShowAddSkill(false);
+    setRefreshKey(prev => prev + 1); // trigger MySkillsTab refresh
+
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -30,7 +42,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold text-gray-900">Skill Management System</h1>
-            
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <User className="w-5 h-5 text-gray-600" />
@@ -52,7 +63,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
+      {/* Tabs */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
@@ -73,9 +84,35 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ActiveComponent user={user} />
+        {/* Success message */}
+        {successMessage && (
+          <p className="text-green-600 font-medium mb-4">{successMessage}</p>
+        )}
+
+        {/* Show AddSkillCard if adding */}
+        {showAddSkill ? (
+          <AddSkillCard
+            onSubmit={handleSkillSubmit}
+            onCancel={() => setShowAddSkill(false)}
+          />
+        ) : (
+          <>
+            {activeTab === 'my-skills' && (
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => setShowAddSkill(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Add Skill
+                </button>
+              </div>
+            )}
+
+            {/* Render active tab */}
+            <ActiveComponent key={refreshKey} user={user} />
+          </>
+        )}
       </main>
     </div>
   );

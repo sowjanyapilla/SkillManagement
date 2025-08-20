@@ -27,12 +27,48 @@ export default function AddSkillCard({ onSubmit, onCancel }: AddSkillCardProps) 
     setSubSkills(updated);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (skillName && subSkills.every(s => s.name)) {
-      onSubmit({ skillName, subSkills });
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (skillName && subSkills.every(s => s.name)) {
+    const payload = {
+      skill_name: skillName,
+      sub_skills: subSkills.map(s => ({
+        sub_skill_name: s.name,
+        employee_proficiency: s.proficiency,
+        experience_years: s.experience,
+        has_certification: s.hasCertification,
+        certification_file_url: s.certificationFile ? s.certificationFile.name : null
+      }))
+    };
+
+    try {
+      const token = localStorage.getItem("token"); // get token from localStorage
+      const response = await fetch(`${BACKEND_URL}/skills/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}) // add Authorization header
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || "Failed to add skill");
+      }
+
+      const data = await response.json();
+      console.log("Skill added:", data);
+      onSubmit(data);
+    } catch (error: any) {
+      console.error("Error adding skill:", error.message);
+      alert(error.message);
     }
-  };
+  }
+};
 
   const renderStars = (proficiency: number, onChange: (value: number) => void) => {
     return (
