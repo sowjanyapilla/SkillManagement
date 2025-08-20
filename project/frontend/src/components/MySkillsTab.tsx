@@ -197,7 +197,7 @@
 
 
 import { useEffect, useState } from "react";
-import { Award, FileText, Star } from "lucide-react";
+import { AlignCenter, Award, FileText, Star } from "lucide-react";
 import { Skill } from "../types";
 
 // Backend response types
@@ -206,9 +206,12 @@ interface SubSkillResponseFromBackend {
   skill_id: number;
   sub_skill_name: string;
   employee_proficiency: number;
+  manager_proficiency?: number;
   experience_years: number;
   has_certification: boolean;
   certification_file_url?: string;
+  status?: "pending" | "approved" | "rejected";
+  manager_comments?: string;
   created_at: string;
 }
 
@@ -253,6 +256,9 @@ export default function MySkillsTab() {
             skill_id: sub.skill_id,
             sub_skill_name: sub.sub_skill_name,
             proficiency_level: sub.employee_proficiency,
+            manager_proficiency: sub.manager_proficiency,
+            status: sub.status,
+            manager_comments: sub.manager_comments,
             experience_years: sub.experience_years,
             has_certification: sub.has_certification,
             certification_file_url: sub.certification_file_url,
@@ -272,19 +278,8 @@ export default function MySkillsTab() {
     fetchSkills();
   }, [BASE_URL]);
 
-  const handleAddSkill = (skillData: any) => {
-    const newSkill: Skill = {
-      id: Date.now(),
-      user_id: 0, // replace with actual user ID if available
-      skill_name: skillData.skillName,
-      sub_skills: skillData.subSkills,
-      status: "pending",
-      created_at: new Date().toISOString(),
-    };
-    setSkills([...skills, newSkill]);
-  };
-
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status?: string) => {
+    if (!status) return null;
     const styles = {
       pending: "bg-yellow-100 text-yellow-800",
       approved: "bg-green-100 text-green-800",
@@ -332,40 +327,52 @@ export default function MySkillsTab() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skill Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sub-skills</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proficiency</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Certifications</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th>Skill Name</th>
+                <th>Sub-skills</th>
+                <th>Proficiency</th>
+                <th>Experience</th>
+                <th>Certification</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {skills.map((skill) => (
                 <tr key={skill.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap flex items-center">
+                  <td className="px-6 py-4 flex items-center">
                     <Award className="w-5 h-5 text-blue-600 mr-2" />
-                    <span className="font-medium text-gray-900">{skill.skill_name}</span>
+                    <span className="font-medium text-gray-900">
+                      {skill.skill_name}
+                    </span>
                   </td>
-                  <td className="px-6 py-4">
+
+                  <td className="px-6 py-4 space-y-1">
                     {skill.sub_skills.map((sub) => (
-                      <div key={sub.id} className="text-sm text-gray-700">{sub.sub_skill_name}</div>
-                    ))}
-                  </td>
-                  <td className="px-6 py-4">
-                    {skill.sub_skills.map((sub) => (
-                      <div key={sub.id} className="flex items-center space-x-2">
-                        {renderStars(sub.proficiency_level)}
-                        <span className="text-sm text-gray-600">({sub.proficiency_level}/5)</span>
+                      <div key={sub.id} className="text-sm text-gray-700">
+                        {sub.sub_skill_name}
                       </div>
                     ))}
                   </td>
-                  <td className="px-6 py-4">
+
+                  <td className="px-6 py-4 space-y-1">
                     {skill.sub_skills.map((sub) => (
-                      <div key={sub.id} className="text-sm text-gray-700">{sub.experience_years} years</div>
+                      <div key={sub.id} className="flex items-center space-x-2">
+                        {renderStars(sub.manager_proficiency ?? sub.proficiency_level)}
+                        <span className="text-sm text-gray-600">
+                          ({sub.manager_proficiency ?? sub.proficiency_level}/5)
+                        </span>
+                      </div>
                     ))}
                   </td>
-                  <td className="px-6 py-4">
+
+                  <td className="px-6 py-4 space-y-1">
+                    {skill.sub_skills.map((sub) => (
+                      <div key={sub.id} className="text-sm text-gray-700">
+                        {sub.experience_years} years
+                      </div>
+                    ))}
+                  </td>
+
+                  <td className="px-6 py-4 space-y-1">
                     {skill.sub_skills.map((sub) => (
                       <div key={sub.id}>
                         {sub.has_certification ? (
@@ -379,7 +386,14 @@ export default function MySkillsTab() {
                       </div>
                     ))}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(skill.status)}</td>
+
+                  <td className="px-6 py-4 flex flex-col items-center">
+  {skill.sub_skills.map((sub) => (
+    <div key={sub.id} className="mb-1">
+      {getStatusBadge(sub.status)}
+    </div>
+  ))}
+</td>
                 </tr>
               ))}
             </tbody>

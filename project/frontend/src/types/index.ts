@@ -20,11 +20,16 @@ export interface SubSkill {
   id: number;
   skill_id: number;
   sub_skill_name: string;
-  proficiency_level: number;
+  proficiency_level: number;       // employee_proficiency
   experience_years: number;
   has_certification: boolean;
   certification_file_url?: string;
   created_at: string;
+
+  // Add manager-reviewed properties
+  manager_proficiency?: number;    // optional
+  status?: "pending" | "approved" | "rejected";
+  manager_comments?: string;
 }
 
 // Separate interface ONLY for when submitting new skills
