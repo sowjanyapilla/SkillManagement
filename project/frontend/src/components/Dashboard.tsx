@@ -19,10 +19,19 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [successMessage, setSuccessMessage] = useState('');
   const [refreshKey, setRefreshKey] = useState(0); // to trigger refresh of MySkillsTab
 
+  // const tabs = [
+  //   { id: 'my-skills', label: 'My Skills', component: MySkillsTab },
+  //   { id: 'skill-matching', label: 'Skill Matching', component: SkillMatchingTab },
+  //   { id: 'approvals', label: 'Approvals', component: ApprovalsTab },
+  // ];
   const tabs = [
     { id: 'my-skills', label: 'My Skills', component: MySkillsTab },
-    { id: 'skill-matching', label: 'Skill Matching', component: SkillMatchingTab },
-    { id: 'approvals', label: 'Approvals', component: ApprovalsTab },
+    ...(user.is_manager
+      ? [
+          { id: 'skill-matching', label: 'Skill Matching', component: SkillMatchingTab },
+          { id: 'approvals', label: 'Approvals', component: ApprovalsTab },
+        ]
+      : []),
   ];
 
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || MySkillsTab;

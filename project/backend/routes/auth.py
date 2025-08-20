@@ -7,7 +7,7 @@ from jose import jwt
 from datetime import datetime, timedelta, timezone
 import os
 from urllib.parse import urlencode
-
+import json
 from database import get_db
 from models.user import User
 from oauth_setup import oauth  # your initialized OAuth client
@@ -92,13 +92,19 @@ async def auth_callback(request: Request, db: AsyncSession = Depends(get_db)):
         }
         jwt_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
-        # Build query string for frontend
-        query = urlencode({
-            "token": jwt_token,
+        user_obj = {
+            "id": user.id,
             "email": user.email,
             "name": user.name,
             "employee_id": user.employee_id,
-            "id": user.id,
+            "is_manager": user.is_manager,
+            "manager_id": user.manager_id
+        }
+        print(user_obj)
+        # Build query string for frontend
+        query = urlencode({
+            "token": jwt_token,
+            "user": json.dumps(user_obj),
             "google_access_token": token.get("access_token", "")
         })
 

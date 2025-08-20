@@ -14,30 +14,15 @@ export default function OAuthCallback({ onLogin }: OAuthCallbackProps) {
     const handleLogin = async () => {
       try {
         const query = new URLSearchParams(location.search);
+        
         const token = query.get('token');
-        const email = query.get('email');
-        const name = query.get('name');
-        const idParam = query.get('id');
-
-        if (token && email && name && idParam) {
-          // OPTIONAL: Verify token with backend before proceeding
-          // const response = await fetch(`/api/verify?token=${token}`);
-          // const isValid = await response.json();
-          // if (!isValid) throw new Error("Invalid token");
-
-          const user: User = {
-            id: parseInt(idParam, 10),
-            email,
-            name,
-            avatar_url: '', // optional, can be fetched from backend
-            is_manager: false, // or decode from token if included
-            created_at: new Date().toISOString(),
-          };
-
-          localStorage.setItem('user', JSON.stringify(user));
+        const userStr = query.get('user');
+        // console.log(user)
+        if (userStr && token) {
+          const user: User = JSON.parse(userStr); // ✅ convert string → object
+          localStorage.setItem('user', JSON.stringify(user)); // ✅ correct
           localStorage.setItem('token', token);
           onLogin(user);
-
           navigate('/dashboard');
         } else {
           navigate('/');

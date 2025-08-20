@@ -11,7 +11,7 @@ function App() {
 
   // Check for existing session on app load
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
+    const savedUser = localStorage.getItem('user'); 
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }

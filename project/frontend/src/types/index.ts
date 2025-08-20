@@ -2,10 +2,13 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  avatar_url?: string;
+  employee_id: string;
   is_manager: boolean;
-  created_at: string;
+  manager_id: number | null;   // nullable because sometimes it can be null
+  created_at?: string;         // optional if not always included
+  avatar_url?: string;         // optional if you plan to add later
 }
+
 
 export interface Skill {
   id: number;
