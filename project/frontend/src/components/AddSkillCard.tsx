@@ -7,11 +7,15 @@ interface AddSkillCardProps {
   onCancel: () => void;
 }
 
+
+
 export default function AddSkillCard({ onSubmit, onCancel }: AddSkillCardProps) {
   const [skillName, setSkillName] = useState('');
   const [subSkills, setSubSkills] = useState<SubSkillData[]>([
     { name: '', proficiency: 1, experience: 0, hasCertification: false }
   ]);
+  const [errors, setErrors] = useState<string[]>(subSkills.map(() => ''));
+
 
   const addSubSkill = () => {
     setSubSkills([...subSkills, { name: '', proficiency: 1, experience: 0, hasCertification: false }]);
@@ -25,6 +29,14 @@ export default function AddSkillCard({ onSubmit, onCancel }: AddSkillCardProps) 
     const updated = [...subSkills];
     updated[index] = { ...updated[index], [field]: value };
     setSubSkills(updated);
+
+    // Clear error when proficiency is valid
+  if (field === 'proficiency') {
+    const newErrors = [...errors];
+    newErrors[index] = '';
+    setErrors(newErrors);
+  }
+
   };
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -70,14 +82,23 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 };
 
-  const renderStars = (proficiency: number, onChange: (value: number) => void) => {
-    return (
+  const renderStars = (proficiency: number, experience: number, index: number, onChange: (value: number) => void) => {
+  return (
+    <div>
       <div className="flex space-x-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             type="button"
-            onClick={() => onChange(star)}
+            onClick={() => {
+              if (experience <= 2 && star > 2) {
+                const newErrors = [...errors];
+                newErrors[index] = 'Proficiency cannot be more than 2 for experience ≤ 2 years';
+                setErrors(newErrors);
+                return;
+              }
+              onChange(star);
+            }}
             className="focus:outline-none"
           >
             <Star
@@ -88,8 +109,11 @@ const handleSubmit = async (e: React.FormEvent) => {
           </button>
         ))}
       </div>
-    );
-  };
+      {errors[index] && <p className="text-xs text-red-500 mt-1">{errors[index]}</p>}
+    </div>
+  );
+};
+
 
   return (
     <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
@@ -104,20 +128,19 @@ const handleSubmit = async (e: React.FormEvent) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Skill Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Skill Name
-          </label>
-          <input
-            type="text"
-            value={skillName}
-            onChange={(e) => setSkillName(e.target.value)}
-            placeholder="e.g., React Development, Data Analysis"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+    <select
+  value={skillName}
+  onChange={(e) => setSkillName(e.target.value)}
+  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white appearance-none"
+  required
+>
+  <option value="">Select a skill</option>
+  <option value="Salesforce">Salesforce</option>
+  <option value="Conga">Conga</option>
+  <option value="Oracle Fusion">Oracle Fusion</option>
+  <option value="NetSuite">NetSuite</option>
+</select>
+
 
         {/* Sub-skills */}
         <div className="space-y-4">
@@ -185,7 +208,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <label className="block text-xs font-medium text-gray-600 mb-2">
                   Proficiency Level
                 </label>
-                {renderStars(subSkill.proficiency, (value) => updateSubSkill(index, 'proficiency', value))}
+                {renderStars(subSkill.proficiency, subSkill.experience, index, (value) => updateSubSkill(index, 'proficiency', value))}
                 <p className="text-xs text-gray-500 mt-1">Click stars to set proficiency (1-5)</p>
               </div>
 

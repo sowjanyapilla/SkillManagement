@@ -83,14 +83,41 @@ async def create_skill(
 
 # -------------------- Get My Skills --------------------
 @router.get("/my-skills")
-async def get_my_skills(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_my_skills(
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(
         select(Skill)
-        .options(joinedload(Skill.sub_skills))  # if you want nested sub-skills
+        .options(joinedload(Skill.sub_skills))
         .where(Skill.user_id == current_user.id)
     )
     skills = result.unique().scalars().all()
-    return skills
+
+    skill_list = []
+    for skill in skills:
+        skill_list.append({
+            "id": skill.id,
+            "user_id": skill.user_id,
+            "skill_name": skill.skill_name,
+            "created_at": skill.created_at,
+            "sub_skills": [
+                {
+                    "id": sub.id,
+                    "skill_id": sub.skill_id,
+                    "sub_skill_name": sub.sub_skill_name,
+                    "employee_proficiency": sub.employee_proficiency,
+                    "manager_proficiency": sub.manager_proficiency,
+                    "experience_years": sub.experience_years,
+                    "has_certification": sub.has_certification,
+                    "certification_file_url": sub.certification_file_url,
+                    "status": sub.status.value,  # send as string
+                    "manager_comments": sub.manager_comments,
+                    "created_at": sub.created_at,
+                } for sub in skill.sub_skills
+            ]
+        })
+    return skill_list
 # -------------------- Get a Single Skill --------------------
 @router.get("/{skill_id}", response_model=SkillResponse)
 def get_skill(
