@@ -55,6 +55,9 @@ export interface SubSkillData {
   experience: number;
   hasCertification: boolean;
   certificationFile?: File;
+  employeeName?: string;
+  employeeId?: string;
+
 }
 
 export interface SkillFilter {

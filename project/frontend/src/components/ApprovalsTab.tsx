@@ -90,30 +90,30 @@ export default function ApprovalsTab({ user }: ApprovalsTabProps) {
   };
 
   const renderStars = (proficiency: number, onChange?: (value: number) => void) => {
-    return (
-      <div className="flex space-x-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => onChange?.(star)}
-            disabled={!onChange}
-            className={`focus:outline-none ${onChange ? 'cursor-pointer' : 'cursor-default'}`}
-          >
-            <Star
-              className={`w-4 h-4 transition-colors ${
-                star <= proficiency 
-                  ? 'text-yellow-400 fill-current' 
-                  : onChange 
-                    ? 'text-gray-300 hover:text-yellow-200' 
-                    : 'text-gray-300'
-              }`}
-            />
-          </button>
-        ))}
-      </div>
-    );
-  };
+  return (
+    <div className="flex space-x-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange?.(star)}
+          disabled={!onChange}
+          className={`focus:outline-none ${onChange ? 'cursor-pointer' : 'cursor-default'}`}
+        >
+          <Star
+            className={`w-4 h-4 transition-colors ${
+              star <= proficiency 
+                ? 'text-yellow-400 fill-current' 
+                : onChange 
+                  ? 'text-gray-300 hover:text-yellow-200' 
+                  : 'text-gray-300'
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+};
 
   if (!user.is_manager) {
     return (
