@@ -17,15 +17,10 @@ class Skill(Base):
     __tablename__ = "skills"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     skill_name = Column(String, nullable=False)
-    status = Column(Enum(SkillStatus), default=SkillStatus.PENDING)
-    manager_comments = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="skills")
     sub_skills = relationship("SubSkill", back_populates="skill", cascade="all, delete-orphan")
 
 
@@ -33,7 +28,8 @@ class SubSkill(Base):
     __tablename__ = "sub_skills"
 
     id = Column(Integer, primary_key=True, index=True)
-    skill_id = Column(Integer, ForeignKey("skills.id"), nullable=False)
+    skill_id = Column(Integer, ForeignKey("skills.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     sub_skill_name = Column(String, nullable=False)
 
     # Employee’s self-assessed values
@@ -43,8 +39,8 @@ class SubSkill(Base):
     certification_file_url = Column(String)
 
     # Manager-reviewed values
-    manager_proficiency = Column(Integer, nullable=True)  # override employee_proficiency
-    status = Column(Enum(SkillStatus), default=SkillStatus.PENDING)  # approval at sub-skill level
+    manager_proficiency = Column(Integer, nullable=True)
+    status = Column(Enum(SkillStatus), default=SkillStatus.PENDING)
     manager_comments = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -52,4 +48,4 @@ class SubSkill(Base):
 
     # Relationships
     skill = relationship("Skill", back_populates="sub_skills")
-
+    user = relationship("User", back_populates="skills")
