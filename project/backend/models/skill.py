@@ -8,9 +8,9 @@ import enum
 
 
 class SkillStatus(enum.Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
 
 class Skill(Base):
@@ -22,6 +22,7 @@ class Skill(Base):
 
     # Relationships
     sub_skills = relationship("SubSkill", back_populates="skill", cascade="all, delete-orphan")
+
 
 
 class SubSkill(Base):
@@ -49,3 +50,4 @@ class SubSkill(Base):
     # Relationships
     skill = relationship("Skill", back_populates="sub_skills")
     user = relationship("User", back_populates="skills")
+

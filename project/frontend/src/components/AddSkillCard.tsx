@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Minus, Upload, Star, X } from 'lucide-react';
 import { SubSkillData } from '../types';
 
@@ -8,13 +8,14 @@ interface AddSkillCardProps {
 }
 
 
-
 export default function AddSkillCard({ onSubmit, onCancel }: AddSkillCardProps) {
-  const [skillName, setSkillName] = useState('');
+  const [skills, setSkills] = useState<{ id: number; skill_name: string }[]>([]);
+  const [skillName, setSkillName] = useState("");
   const [subSkills, setSubSkills] = useState<SubSkillData[]>([
-    { name: '', proficiency: 1, experience: 0, hasCertification: false }
+    { name: '', proficiency: 1, experience: 0, hasCertification: false, employeeName: '', employeeId: '' }
   ]);
   const [errors, setErrors] = useState<string[]>(subSkills.map(() => ''));
+  const [success, setSuccess] = useState(false); 
 
 
   const addSubSkill = () => {
@@ -40,6 +41,24 @@ export default function AddSkillCard({ onSubmit, onCancel }: AddSkillCardProps) 
   };
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${BACKEND_URL}/skills/`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!response.ok) throw new Error("Failed to fetch skills");
+        const data = await response.json();
+        setSkills(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchSkills();
+  }, []);
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -75,6 +94,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       const data = await response.json();
       console.log("Skill added:", data);
       onSubmit(data);
+      setSuccess(true); 
     } catch (error: any) {
       console.error("Error adding skill:", error.message);
       alert(error.message);
@@ -135,12 +155,12 @@ const handleSubmit = async (e: React.FormEvent) => {
   required
 >
   <option value="">Select a skill</option>
-  <option value="Salesforce">Salesforce</option>
-  <option value="Conga">Conga</option>
-  <option value="Oracle Fusion">Oracle Fusion</option>
-  <option value="NetSuite">NetSuite</option>
+  {skills.map((skill) => (
+    <option key={skill.id} value={skill.skill_name}>
+      {skill.skill_name}
+    </option>
+  ))}
 </select>
-
 
         {/* Sub-skills */}
         <div className="space-y-4">
@@ -190,7 +210,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Experience (years)
+                    Experience for this sub skill (years)
                   </label>
                   <input
                     type="number"
@@ -267,7 +287,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             type="submit"
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Add Skill
+            Submit Skill
           </button>
         </div>
       </form>

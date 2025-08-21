@@ -9,7 +9,6 @@ from routes.auth import get_current_user# async dependency
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-
 @router.get("/", response_model=List[UserResponse])
 async def get_users(
     skip: int = 0,

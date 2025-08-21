@@ -37,3 +37,18 @@ class UserProfile(UserResponse):
 
     class Config:
         from_attributes = True
+
+class UserAuthenticated(BaseModel):
+    id: int
+    email: EmailStr
+    name: str
+    employee_id: str
+    is_manager: bool # This field was missing
+    manager_id: Optional[int] = None
+    created_at: datetime
+    designation: Optional[str] = None # This field was missing
+    capability: Optional[str] = None # This field was missing
+
+    model_config = {
+        "from_attributes": True
+    }

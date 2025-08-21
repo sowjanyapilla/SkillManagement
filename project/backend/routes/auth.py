@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 import json
 from database import get_db
 from models.user import User
+from schemas.user import UserAuthenticated
 from oauth_setup import oauth  # your initialized OAuth client
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -31,6 +32,23 @@ def create_access_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+# async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#         email = payload.get("sub")
+#         if email is None:
+#             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+#     except jwt.JWTError:
+#         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+#     result = await db.execute(select(User).where(User.email == email))
+#     user = result.scalar_one_or_none()
+#     if user is None:
+#         raise HTTPException(status_code=404, detail="User not found")
+#     return user
+
+# In your routes/auth.py or wherever get_current_user is defined
+
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -38,13 +56,25 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     except jwt.JWTError:
+        print("JWTError in get_current_user")
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    except Exception as e:
+        # THIS IS THE NEW PART. We are now catching ALL exceptions.
+        print(f"An unexpected error occurred in get_current_user: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal server error during authentication")
 
+    # The code below this line is what we've seen in the logs.
+    # The error must be happening here or right after this section.
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
+    
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+        
+    # The return statement
+    return UserAuthenticated.model_validate(user)
 
 
 # -------------------- Google OAuth --------------------
@@ -115,76 +145,3 @@ async def auth_callback(request: Request, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         print("Error in callback:", e)
         raise HTTPException(status_code=500, detail="OAuth callback failed")
-
-
-
-# from fastapi import APIRouter, Depends, HTTPException, status, Request
-# from fastapi.responses import RedirectResponse
-# from sqlalchemy.orm import Session
-# from database import get_db
-# from models.user import User
-# from jose import jwt
-# import requests
-# import os
-
-# router = APIRouter()
-
-# GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
-# GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
-# FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
-# REDIRECT_URI = os.environ.get("REDIRECT_URI", "http://localhost:8000/auth/callback")
-# JWT_SECRET = os.environ.get("JWT_SECRET", "supersecret")
-
-# @router.get("/login")
-# def login():
-#     google_auth_url = (
-#         "https://accounts.google.com/o/oauth2/v2/auth"
-#         "?response_type=code"
-#         f"&client_id={GOOGLE_CLIENT_ID}"
-#         f"&redirect_uri={REDIRECT_URI}"
-#         "&scope=openid%20email%20profile"
-#         "&access_type=offline"
-#     )
-#     return RedirectResponse(google_auth_url)
-
-# @router.get("/callback")
-# def callback(code: str, db: Session = Depends(get_db)):
-#     # Exchange code for tokens
-#     token_url = "https://oauth2.googleapis.com/token"
-#     data = {
-#         "code": code,
-#         "client_id": GOOGLE_CLIENT_ID,
-#         "client_secret": GOOGLE_CLIENT_SECRET,
-#         "redirect_uri": REDIRECT_URI,
-#         "grant_type": "authorization_code",
-#     }
-#     r = requests.post(token_url, data=data)
-#     if not r.ok:
-#         raise HTTPException(status_code=400, detail="Failed to get token")
-#     tokens = r.json()
-#     id_token = tokens.get("id_token")
-
-#     # Decode Google ID token
-#     payload = jwt.decode(id_token, options={"verify_signature": False})
-
-#     email = payload.get("email")
-#     name = payload.get("name")
-#     sub = payload.get("sub")  # Google user id
-
-#     if not email:
-#         raise HTTPException(status_code=400, detail="Google login failed")
-
-#     # Check if user exists, otherwise create
-#     user = db.query(User).filter(User.email == email).first()
-#     if not user:
-#         user = User(email=email, name=name, employee_id=sub)
-#         db.add(user)
-#         db.commit()
-#         db.refresh(user)
-
-#     # Generate a simple token for frontend (can be JWT)
-#     frontend_token = jwt.encode({"email": email, "id": user.id}, JWT_SECRET)
-
-#     # Redirect to frontend with token
-#     redirect_url = f"{FRONTEND_URL}/oauth-callback?token={frontend_token}&email={email}&name={name}&id={user.id}"
-#     return RedirectResponse(redirect_url)
